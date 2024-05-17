@@ -1,0 +1,36 @@
+void connectToWiFi() {
+    WiFi.begin(ssid, password);    // Iniciar la conexión WiFi
+    Serial.print("Connecting to WiFi");
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");         // Imprimir puntos mientras se conecta
+    }
+    Serial.println("\nConnected to WiFi");  // Confirmar la conexión
+}
+
+void connectToMQTT() {
+    while (!mqtt_client.connected()) {
+        String client_id = "esp32-client-" + String(WiFi.macAddress());  // Crear un ID único para el cliente
+        Serial.printf("Connecting to MQTT Broker as %s.....\n", client_id.c_str());
+        if (mqtt_client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
+            Serial.println("Connected to MQTT broker");
+            mqtt_client.subscribe(mqtt_topic);        // Suscribirse al topic
+            mqtt_client.publish(mqtt_topic, "Hi EMQX I'm ESP32 ^^");  // Publicar un mensaje al conectar
+        } else {
+            Serial.print("Failed, rc=");
+            Serial.print(mqtt_client.state());  // Imprimir el estado de la conexión fallida
+            Serial.println(" try again in 5 seconds");
+            delay(5000);  // Esperar 5 segundos antes de reintentar
+        }
+    }
+}
+
+void mqttCallback(char *mqtt_topic, byte *payload, unsigned int length) {
+    Serial.print("Message received on mqtt_topic: ");
+    Serial.println(mqtt_topic);  // Imprimir el topic del mensaje recibido
+    Serial.print("Message: ");
+    for (unsigned int i = 0; i < length; i++) {
+        Serial.print((char) payload[i]);  // Imprimir el contenido del mensaje
+    }
+    Serial.println("\n-----------------------");
+}
